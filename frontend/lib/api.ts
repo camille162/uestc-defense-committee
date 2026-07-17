@@ -2,13 +2,23 @@
 const BASE = (typeof window !== 'undefined'
   ? (process.env.NEXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000').trim()
   : 'http://backend:8000');
+
+// 基础路径拼接函数
+function getUrl(path: string | null | undefined) {
   if (!path) return null;
   if (path.startsWith('http')) return path;
   return `${BASE}${path.startsWith('/') ? path : '/' + path}`;
 }
 
+// 新增导出 fileUrl 适配面试页面调用，解决 fileUrl is not a function 报错
+export function fileUrl(path: string | null | undefined) {
+  return getUrl(path);
+}
+
 async function jsonFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const url = getUrl(path);
+  if (!url) throw new Error('请求路径不能为空');
+  const res = await fetch(url, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
   });
@@ -39,7 +49,9 @@ export interface Round {
 export async function uploadResume(file: File): Promise<{ text: string }> {
   const fd = new FormData();
   fd.append('file', file);
-  const res = await fetch(`${BASE}/upload/resume`, { method: 'POST', body: fd });
+  const url = getUrl('/upload/resume');
+  if (!url) throw new Error('接口地址异常');
+  const res = await fetch(url, { method: 'POST', body: fd });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
@@ -68,7 +80,9 @@ export async function startRound(id: number) {
 export async function stt(blob: Blob): Promise<{ text: string; audio_path?: string }> {
   const fd = new FormData();
   fd.append('file', blob, 'answer.webm');
-  const res = await fetch(`${BASE}/voice/stt`, { method: 'POST', body: fd });
+  const url = getUrl('/voice/stt');
+  if (!url) throw new Error('接口地址异常');
+  const res = await fetch(url, { method: 'POST', body: fd });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
@@ -76,6 +90,7 @@ export async function stt(blob: Blob): Promise<{ text: string; audio_path?: stri
 const WS_BASE = (typeof window !== 'undefined'
   ? (process.env.NEXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000').trim().replace(/^http/, 'ws')
   : 'ws://backend:8000');
+
 export interface SttStreamHandle {
   send: (chunk: Blob) => void;
   /** 发送 done 信号并等待 final 返回。成功返回 {text, audio_path}，失败/超时 reject。 */
@@ -104,22 +119,38 @@ export function sttStream(
         onInterim(msg.text);
       } else if (msg.type === 'final') {
         finalReceived = { text: msg.text, audio_path: msg.audio_path };
-        if (finalResolve) { finalResolve(finalReceived); finalResolve = null; finalReject = null; }
+        if (finalResolve) {
+          finalResolve(finalReceived);
+          finalResolve = null;
+          finalReject = null;
+        }
       } else if (msg.type === 'error') {
         alive = false;
         onError?.(msg.message);
-        if (finalReject) { finalReject(new Error(msg.message)); finalReject = null; finalResolve = null; }
+        if (finalReject) {
+          finalReject(new Error(msg.message));
+          finalReject = null;
+          finalResolve = null;
+        }
       }
     } catch {}
   };
   ws.onerror = () => {
     alive = false;
     onError?.('WebSocket 连接失败');
-    if (finalReject) { finalReject(new Error('WebSocket 连接失败')); finalReject = null; finalResolve = null; }
+    if (finalReject) {
+      finalReject(new Error('WebSocket 连接失败'));
+      finalReject = null;
+      finalResolve = null;
+    }
   };
   ws.onclose = () => {
     alive = false;
-    if (finalReject && !finalReceived) { finalReject(new Error('WebSocket 已关闭')); finalReject = null; finalResolve = null; }
+    if (finalReject && !finalReceived) {
+      finalReject(new Error('WebSocket 已关闭'));
+      finalReject = null;
+      finalResolve = null;
+    }
   };
 
   return {
@@ -155,8 +186,6 @@ export function sttStream(
     isAlive: () => alive,
   };
 }
-
-
 
 export interface AnswerResult {
   score: { dimensions: Record<string, number>; total: number; comment: string } | null;
@@ -202,7 +231,9 @@ export async function getDetail(id: number) {
 /** Send a log line to the backend so it shows up in `docker compose logs backend`. */
 export function backendLog(tag: string, msg: string) {
   try {
-    fetch(`${BASE}/debug/log`, {
+    const url = getUrl('/debug/log');
+    if (!url) return;
+    fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tag, msg }),
