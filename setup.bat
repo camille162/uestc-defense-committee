@@ -13,6 +13,7 @@ echo.
 :: ---- Python ----
 echo   [1/7] Checking Python...
 set "PYTHON_CMD="
+set "PYVER="
 
 where python >nul 2>&1
 if not errorlevel 1 set "PYTHON_CMD=python"
@@ -22,14 +23,38 @@ if not errorlevel 1 set "PYTHON_CMD=python3"
 
 if not defined PYTHON_CMD goto :NO_PYTHON
 
-for /f "tokens=2" %%v in ('%PYTHON_CMD% --version 2^>^&1') do echo         Found Python %%v
+:: Parse version string (e.g. "Python 3.12.4" -> major=3, minor=12)
+for /f "tokens=2 delims= " %%v in ('"%PYTHON_CMD%" --version 2^>^&1') do set "PYVER=%%v"
+
+for /f "tokens=1,2 delims=." %%a in ("%PYVER%") do (
+    set "PY_MAJOR=%%a"
+    set "PY_MINOR=%%b"
+)
+
+:: Require Python 3.11+
+if "%PY_MAJOR%" NEQ "3" goto :BAD_PYTHON_VER
+if %PY_MINOR% LSS 11 goto :BAD_PYTHON_VER
+
+echo         Found Python %PYVER%
 goto :CHECK_NODE
 
 :NO_PYTHON
 echo.
-echo   [ERROR] Python 3.11+ not found.
-echo   Download: https://mirrors.huaweicloud.com/python/
+echo   [ERROR] Python not found in PATH.
+echo   Download Python 3.11+: https://mirrors.huaweicloud.com/python/
 echo   IMPORTANT: check "Add Python to PATH" during install.
+pause
+exit /b 1
+
+:BAD_PYTHON_VER
+echo.
+echo   [ERROR] Python %PYVER% is too old (need 3.11+).
+echo   Your current Python: %PYVER%
+echo.
+echo   Download Python 3.11+: https://mirrors.huaweicloud.com/python/
+echo   IMPORTANT: install Python 3.11+ AND make sure it appears
+echo   BEFORE Anaconda/older Python in your PATH, OR uninstall
+echo   the old Python first.
 pause
 exit /b 1
 
@@ -115,7 +140,7 @@ echo   [5/7] Installing Python dependencies (Aliyun mirror)...
 cd backend
 if not exist "venv" %PYTHON_CMD% -m venv venv
 call venv\Scripts\activate.bat
-pip install -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements.txt
+pip install --only-binary :all: -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements.txt
 if errorlevel 1 goto :PIP_FAIL
 echo         Done
 goto :INSTALL_NODE
