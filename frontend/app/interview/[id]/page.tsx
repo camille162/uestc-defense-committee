@@ -185,9 +185,10 @@ export default function InterviewPage() {
     };
     a.onended = onEnded;
     a.play().catch(() => {
-      // Autoplay blocked — show a "click to play" prompt, then start listening anyway
+      // Autoplay blocked — show a prompt. User must click to hear audio,
+      // then the natural 'ended' event will trigger startListening.
       setNeedGesture(true);
-      onEnded();
+      // Do NOT call onEnded() here — wait for user gesture
     });
     return () => { a.onended = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -701,7 +702,6 @@ export default function InterviewPage() {
         <audio
           ref={el => { audioRef.current = el; if (el && !audioReady) setAudioReady(true); }}
           controls
-          autoPlay
           className="w-full"
         />
       </div>
