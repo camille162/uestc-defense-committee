@@ -97,47 +97,6 @@ docker compose up -d --build
 
 ---
 
-## 🐳 国内用户 · Docker 部署（仅当本地部署不可行时尝试）
-
-如果你的环境必须用 Docker，需要先配置国内镜像源。以下以 Rancher Desktop 为例（Docker Desktop 用户可在 Settings → Docker Engine 中配置）：
-
-### 1. 配置 Docker 镜像加速
-
-编辑 Docker daemon 配置文件（Windows 路径：`C:\Users\<用户名>\.docker\daemon.json`）：
-
-```json
-{
-  "registry-mirrors": [
-    "https://docker.1ms.run",
-    "https://docker.xuanyuan.me"
-  ]
-}
-```
-
-> 以上镜像源来自互联网公开资源，可能随时失效。如果无法使用，请搜索「Docker 国内镜像」获取最新可用地址。
-
-重启 Docker 后验证：
-
-```bash
-docker info | grep -A5 "Registry Mirrors"
-```
-
-### 2. 切换到 SQLite + 启动
-
-编辑 `.env`，将 `DB_ENGINE=mysql` 改为：
-
-```ini
-DB_ENGINE=sqlite
-```
-
-然后启动：
-
-```bash
-docker compose up -d --build
-```
-
-这样就不需要拉取 MySQL 镜像了，只需拉取 Python 和 Node 两个基础镜像（走上面的国内镜像源）。
-
 ---
 
 ## 使用流程
