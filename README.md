@@ -10,45 +10,32 @@
 
 > ⚠️ 由于国内网络环境限制，Docker Hub 镜像拉取经常失败。**强烈推荐国内用户使用本地部署方式**，无需安装 Docker，只需 Python + Node.js。
 
-### 环境要求
+### 启动前检查（本机如果没有 Python/Node.js，需先装一次）
 
-| 项目 | 最低要求 | 说明 |
-|------|---------|------|
-| 操作系统 | Windows 10+ / macOS 12+ / Linux | 均支持 |
-| **Python** | **3.11+** | [华为云镜像下载](https://mirrors.huaweicloud.com/python/)（Windows） |
-| **Node.js** | **20 LTS** | [npmmirror 镜像下载](https://npmmirror.com/mirrors/node/) |
-| **ffmpeg** | 任意版本 | 语音识别需要（缺失不影响启动，仅影响语音功能） |
-| 内存 | **8 GB** 以上 | 16 GB 更佳（Whisper 模型加载需要） |
-| 硬盘 | **5 GB** 空闲空间 | Whisper 模型首次自动下载约 1.5 GB |
-| 网络 | 能访问 `api.deepseek.com` | 用于调用大模型 API |
+| 项目 | 需要 | 下载地址 |
+|------|------|---------|
+| **Python** | 3.11+ | [华为云镜像](https://mirrors.huaweicloud.com/python/)（安装时勾选 **Add to PATH**） |
+| **Node.js** | 20 LTS | [npmmirror 镜像](https://npmmirror.com/mirrors/node/)（一路下一步） |
+| 内存 | 8 GB+ | 16 GB 更佳 |
+| 硬盘 | 5 GB 空闲 | Whisper 模型约 1.5 GB |
+| 网络 | 能访问 `api.deepseek.com` | 调用大模型 API |
+| 操作系统 | Win 10+ / macOS 12+ / Linux | 均支持 |
 
-### 三步启动
+> **ffmpeg 不需要手动装**——`setup.bat` 会自动通过 winget 安装。如果 winget 失败（极少情况），脚本会打印手动下载链接，缺失不影响启动，仅语音识别不可用。
 
-#### 第一步：获取 DeepSeek API Key
+### 启动（5 步，首次约 30 分钟，之后 10 秒）
 
-1. 打开 [DeepSeek 开放平台](https://platform.deepseek.com)
-2. 注册账号（支持手机号）
-3. 进入「API Keys」页面，点击「创建 API Key」
-4. 复制 Key（格式：`sk-xxxxxxxxxxxxxxxx`）
-5. **新用户赠送 ¥10 额度，足够练习数十次**
+**第 1 步**：注册 [DeepSeek 开放平台](https://platform.deepseek.com)，创建 API Key（新用户送 ¥10）。
 
-#### 第二步：下载项目
+**第 2 步**：下载项目 ZIP 解压，或 `git clone https://github.com/camille162/uestc-defense-committee.git`。
 
-```bash
-git clone https://github.com/camille162/uestc-defense-committee.git
-cd uestc-defense-committee
-```
+**第 3 步**：进入项目目录，双击 `setup.bat`（macOS/Linux 终端执行 `./setup.sh`）。
 
-> 如果 GitHub 打不开，可以在项目页面点击「Code」→「Download ZIP」下载压缩包解压。
+**第 4 步**：脚本检测到没填 API Key，会自动弹出记事本让你填入 Key，保存关闭。
 
-#### 第三步：一键启动
+**第 5 步**：再次双击 `setup.bat`，自动安装依赖 → 启动服务 → 浏览器打开 **http://localhost:3000**。
 
-- **Windows**：双击 `setup.bat`
-- **macOS / Linux**：终端执行 `./setup.sh`
-
-首次运行会自动检查环境、安装依赖、启动服务。浏览器会自动打开 **http://localhost:3000**。
-
-> 首次启动时脚本会检测到你还没填 API Key，自动创建 `.env` 文件并用记事本打开。填入 Key、保存后，重新双击 `setup.bat` 即可。
+> 首次启动需要下载依赖和 Whisper 模型（约 1.5 GB），需 3-8 分钟。之后再次双击 `setup.bat` 10 秒内即可打开。
 
 ---
 
