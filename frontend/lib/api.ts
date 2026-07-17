@@ -18,21 +18,12 @@ export function fileUrl(path: string | null | undefined) {
 async function jsonFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const url = getUrl(path);
   if (!url) throw new Error('请求路径不能为空');
-  // 12s timeout — backend LLM+TTS can take 5-20s, but if it goes
-  // longer we must abort instead of blocking the UI forever.
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 12000);
-  try {
-    const res = await fetch(url, {
-      ...init,
-      signal: controller.signal,
-      headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
-    });
-    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
-    return res.json();
-  } finally {
-    clearTimeout(timer);
-  }
+  const res = await fetch(url, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+  });
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return res.json();
 }
 
 export interface Question {
@@ -170,7 +161,7 @@ export function sttStream(
         });
       }
     },
-    finish: (timeoutMs = 10000) => {
+    finish: (timeoutMs = 15000) => {
       // 已经拿到 final 就直接返回
       if (finalReceived) return Promise.resolve(finalReceived);
       return new Promise((resolve, reject) => {
@@ -181,28 +172,17 @@ export function sttStream(
             ws.send(JSON.stringify({ done: true }));
           }
         } catch {}
-        // 超时强制断开 WS，释放资源，防止页面卡死
         setTimeout(() => {
           if (finalResolve) {
-            const err = new Error('识别超时');
+            const err = new Error('等待流式识别结果超时');
             finalReject?.(err);
             finalResolve = null;
             finalReject = null;
           }
-          alive = false;
-          try { ws.close(); } catch {}
-          finalReceived = null;
         }, timeoutMs);
       });
     },
-    close: () => {
-      alive = false;
-      try { ws.close(); } catch {}
-      // 清空所有引用，防止内存泄漏
-      finalResolve = null;
-      finalReject = null;
-      finalReceived = null;
-    },
+    close: () => { try { ws.close(); } catch {} },
     isAlive: () => alive,
   };
 }
