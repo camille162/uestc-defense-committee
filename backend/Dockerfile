@@ -8,10 +8,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN sed -i 's|http://deb.debian.org|https://mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || \
     sed -i 's|http://deb.debian.org|https://mirrors.aliyun.com|g' /etc/apt/sources.list 2>/dev/null || true
 
-# 系统依赖：ffmpeg (whisper 需要), weasyprint 依赖, pdf/docx 抽取
+# 系统依赖：ffmpeg (whisper 需要), CJK 字体 (PDF 中文支持)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
-    libpango-1.0-0 libpangoft2-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 \
     fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
 

@@ -134,7 +134,6 @@ git clone https://github.com/camille162/uestc-defense-committee.git
 | 端口 8000/3000 被占用 | 重启电脑，或手动关掉占用端口的程序 |
 | 页面打开但一片空白 | 等 1 分钟刷新（Whisper 模型首次下载中） |
 | Windows 用户名含中文 | 可能导致 venv 创建失败，试着手动创建一个英文路径的项目目录 |
-| `OSError: cannot load library 'libgobject-2.0-0'` | Windows 缺 GTK 库，PDF 导出不可用（答辩、语音、打分不受影响）。如需 PDF 参考 https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#windows |
 
 ---
 

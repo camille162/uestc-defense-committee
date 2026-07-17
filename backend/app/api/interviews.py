@@ -642,7 +642,7 @@ def generate_report(interview_id: int, db: Session = Depends(get_db)):
     report = _generate_report_for(interview, db)
     return {
         "markdown": report.overall_comment_md,
-        "pdf_url": _tts_url(report.pdf_path) if report.pdf_path else None,
+        "pdf_url": _tts_url(report.pdf_path),
     }
 
 
