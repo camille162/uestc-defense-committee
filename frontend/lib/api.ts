@@ -1,5 +1,5 @@
 // Browser calls backend directly (avoid Next.js rewrite proxy timeouts on long STT calls)
-const BASE = (typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000') : 'http://backend:8000');
+const BASE = (typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000') : 'http://backend:8000');
 
 export function fileUrl(path: string | null | undefined): string | null {
   if (!path) return null;
@@ -74,7 +74,7 @@ export async function stt(blob: Blob): Promise<{ text: string; audio_path?: stri
 }
 
 const WS_BASE = (typeof window !== 'undefined'
-  ? (process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000').replace(/^http/, 'ws')
+  ? (process.env.NEXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000').replace(/^http/, 'ws')
   : 'ws://backend:8000');
 
 export interface SttStreamHandle {
