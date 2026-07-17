@@ -15,33 +15,57 @@ echo   [1/7] Checking Python...
 set "PYTHON_CMD="
 set "PYVER="
 
-where python >nul 2>&1
-if not errorlevel 1 set "PYTHON_CMD=python"
+:: Strategy: prefer 'py -3.11' (Windows launcher, immune to PATH order),
+:: then 'python3', then 'python'. Always verify version >= 3.11.
 
+:: 1) py -3.11
+py -3.11 --version >nul 2>&1
+if not errorlevel 1 (
+    set "PYTHON_CMD=py -3.11"
+    for /f "tokens=2 delims= " %%v in ('py -3.11 --version 2^>^&1') do set "PYVER=%%v"
+    goto :CHECK_PYVER
+)
+
+:: 2) python3
 where python3 >nul 2>&1
-if not errorlevel 1 set "PYTHON_CMD=python3"
+if not errorlevel 1 (
+    for /f "tokens=2 delims= " %%v in ('python3 --version 2^>^&1') do set "PYVER=%%v"
+    if not "%PYVER%"=="" (
+        set "PYTHON_CMD=python3"
+        goto :CHECK_PYVER
+    )
+)
 
-if not defined PYTHON_CMD goto :NO_PYTHON
+:: 3) python
+where python >nul 2>&1
+if not errorlevel 1 (
+    for /f "tokens=2 delims= " %%v in ('python --version 2^>^&1') do set "PYVER=%%v"
+    if not "%PYVER%"=="" (
+        set "PYTHON_CMD=python"
+        goto :CHECK_PYVER
+    )
+)
 
-:: Parse version string (e.g. "Python 3.12.4" -> major=3, minor=12)
-for /f "tokens=2 delims= " %%v in ('"%PYTHON_CMD%" --version 2^>^&1') do set "PYVER=%%v"
+:: Nothing found
+goto :NO_PYTHON
 
+:CHECK_PYVER
+:: Parse major.minor from version string (e.g. "3.11.9")
 for /f "tokens=1,2 delims=." %%a in ("%PYVER%") do (
     set "PY_MAJOR=%%a"
     set "PY_MINOR=%%b"
 )
 
-:: Require Python 3.11+
 if "%PY_MAJOR%" NEQ "3" goto :BAD_PYTHON_VER
 if %PY_MINOR% LSS 11 goto :BAD_PYTHON_VER
 
-echo         Found Python %PYVER%
+echo         Found Python %PYVER% ^(via %PYTHON_CMD%^)
 goto :CHECK_NODE
 
 :NO_PYTHON
 echo.
-echo   [ERROR] Python not found in PATH.
-echo   Download Python 3.11+: https://mirrors.huaweicloud.com/python/
+echo   [ERROR] Python not found.
+echo   Install Python 3.11+: https://mirrors.huaweicloud.com/python/
 echo   IMPORTANT: check "Add Python to PATH" during install.
 pause
 exit /b 1
@@ -49,12 +73,19 @@ exit /b 1
 :BAD_PYTHON_VER
 echo.
 echo   [ERROR] Python %PYVER% is too old (need 3.11+).
-echo   Your current Python: %PYVER%
 echo.
-echo   Download Python 3.11+: https://mirrors.huaweicloud.com/python/
-echo   IMPORTANT: install Python 3.11+ AND make sure it appears
-echo   BEFORE Anaconda/older Python in your PATH, OR uninstall
-echo   the old Python first.
+echo   You have Python 3.11+ installed? Try this in PowerShell:
+echo     py -3.11 -m venv venv
+echo     .\venv\Scripts\Activate.ps1
+echo     pip install -i https://mirrors.aliyun.com/pypi/simple/ -r requirements.txt
+echo     set DB_ENGINE=sqlite
+echo     uvicorn app.main:app --host 127.0.0.1 --port 8000
+echo.
+echo   Then in another terminal:
+echo     cd frontend
+echo     set NEXT_PUBLIC_API_BASE=http://127.0.0.1:8000
+echo     npm install
+echo     npx next dev -p 3000
 pause
 exit /b 1
 
@@ -140,7 +171,7 @@ echo   [5/7] Installing Python dependencies (Aliyun mirror)...
 cd backend
 if not exist "venv" %PYTHON_CMD% -m venv venv
 call venv\Scripts\activate.bat
-pip install --only-binary :all: -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements.txt
+pip install -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements.txt
 if errorlevel 1 goto :PIP_FAIL
 echo         Done
 goto :INSTALL_NODE
