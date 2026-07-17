@@ -1,88 +1,152 @@
 # UESTC 答辩委员会 · AI 论文答辩模拟系统
 
-> 基于开源项目 [Offer Master](https://github.com/heatnan/offerMaster) 改造的 **AI 论文答辩模拟工具**。三位 AI 评委（研究方法、领域内容、批判性）依次用语音向你提问，你语音作答，AI 即时评分并生成答辩评价报告。
+> 基于开源项目 [Offer Master](https://github.com/heatnan/offerMaster)（MIT 协议）改造的 **AI 论文答辩模拟工具**。三位 AI 评委依次用语音向你提问，你语音作答，AI 即时评分并生成答辩评价报告。
 
-**用途**：科技论文写作课程期末答辩预演。学生在自己的电脑上部署，上传论文/PPT，AI 评委基于内容提问，模拟真实答辩场景。
+**用途**：科技论文写作课程期末答辩预演。学生在自己电脑上部署，上传论文/PPT，AI 评委基于内容提问，模拟真实答辩场景。
 
 ---
 
-## 🚀 国内用户 · 快速开始（推荐，无需 Docker）
+## 🚀 国内用户 · 部署指南（无需 Docker，Windows / macOS / Linux 通用）
 
-> ⚠️ 由于国内网络环境限制，Docker Hub 镜像拉取经常失败。**强烈推荐国内用户使用本地部署方式**，无需安装 Docker，只需 Python + Node.js。
+> 全程不需要 Docker、不需要配镜像源、不需要拉任何外网镜像。只需 Python + Node.js，脚本自动完成其余一切。
 
-### 启动前检查（本机如果没有 Python/Node.js，需先装一次）
+---
 
-| 项目 | 需要 | 下载地址 |
-|------|------|---------|
-| **Python** | 3.11+ | [华为云镜像](https://mirrors.huaweicloud.com/python/)（安装时勾选 **Add to PATH**） |
-| **Node.js** | 20 LTS | [npmmirror 镜像](https://npmmirror.com/mirrors/node/)（一路下一步） |
-| 内存 | 8 GB+ | 16 GB 更佳 |
-| 硬盘 | 5 GB 空闲 | Whisper 模型约 1.5 GB |
-| 网络 | 能访问 `api.deepseek.com` | 调用大模型 API |
-| 操作系统 | Win 10+ / macOS 12+ / Linux | 均支持 |
+### 第 0 步：检查/安装 Python 和 Node.js（仅第一次需要，5-15 分钟）
 
-> **ffmpeg 不需要手动装**——`setup.bat` 会自动通过 winget 安装。如果 winget 失败（极少情况），脚本会打印手动下载链接，缺失不影响启动，仅语音识别不可用。
+**这是唯一需要你手动操作的步骤**——之后所有操作全自动。
 
-### 启动（5 步，首次约 30 分钟，之后 10 秒）
+#### 检查是否已安装
 
-**第 1 步**：注册 [DeepSeek 开放平台](https://platform.deepseek.com)，创建 API Key（新用户送 ¥10）。
+打开终端（Windows 按 `Win+R` 输入 `cmd` 回车；macOS 打开"终端"），分别输入：
 
-**第 2 步**：下载项目 ZIP 解压，或 `git clone https://github.com/camille162/uestc-defense-committee.git`。
+```bash
+python --version
+node --version
+```
 
-**第 3 步**：进入项目目录，双击 `setup.bat`（macOS/Linux 终端执行 `./setup.sh`）。
+如果两个命令都显示版本号（Python ≥ 3.11，Node ≥ v20），**跳过本节，直接看第 1 步**。
 
-**第 4 步**：脚本检测到没填 API Key，会自动弹出记事本让你填入 Key，保存关闭。
+#### Windows 安装 Python
 
-**第 5 步**：再次双击 `setup.bat`，自动安装依赖 → 启动服务 → 浏览器打开 **http://localhost:3000**。
+1. 打开 https://mirrors.huaweicloud.com/python/
+2. 找到 **3.11.x** 最新版本，点击进入，下载 `python-3.11.x-amd64.exe`
+3. 双击运行安装程序
+4. ⚠️ **第一屏底部务必勾选 "Add Python to PATH"**（不勾会导致后续找不到 python 命令）
+5. 点击「Install Now」，等待完成
 
-> 首次启动需要下载依赖和 Whisper 模型（约 1.5 GB），需 3-8 分钟。之后再次双击 `setup.bat` 10 秒内即可打开。
+#### Windows 安装 Node.js
+
+1. 打开 https://npmmirror.com/mirrors/node/
+2. 找到最新 **v20.x.x LTS** 版本，下载 `node-v20.x.x-x64.msi`
+3. 双击运行，一路点「Next」，全部默认即可
+
+#### macOS 安装
+
+```bash
+brew install python@3.11 node@20
+```
+
+#### Linux (Ubuntu/Debian) 安装
+
+```bash
+sudo apt update
+sudo apt install -y python3.11 python3.11-venv python3.11-dev
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+sudo apt install -y nodejs
+```
+
+---
+
+### 第 1 步：获取 DeepSeek API Key（5 分钟，只需一次）
+
+1. 打开 https://platform.deepseek.com
+2. 用手机号注册账号
+3. 登录后，左侧菜单点击「API Keys」
+4. 点击「创建 API Key」，复制生成的 `sk-xxxxxxxxxxxxxxxx`
+5. ⚠️ **把 Key 保存到一个你能找到的地方**（下一步要用）
+6. 新用户赠送 ¥10，够练几十次
+
+---
+
+### 第 2 步：下载项目（1 分钟）
+
+**方式 A（推荐）**：浏览器打开 https://github.com/camille162/uestc-defense-committee，点击绿色「Code」按钮 →「Download ZIP」→ 解压到桌面。
+
+**方式 B**（如果装了 git）：
+```bash
+git clone https://github.com/camille162/uestc-defense-committee.git
+```
+
+解压后会看到一个名为 `uestc-defense-committee` 的文件夹，里面有 `setup.bat`、`setup.sh`、`README.md` 等文件。
+
+---
+
+### 第 3 步：首次运行 & 填写 API Key（1 分钟）
+
+- **Windows**：双击 `setup.bat`
+- **macOS / Linux**：终端进入项目目录，执行 `./setup.sh`
+
+脚本会自动检测到你还**没填 API Key**，弹出一个窗口（Windows 是记事本，macOS 是文本编辑器）：
+
+1. 找到 `OPENAI_API_KEY=YOUR_DEEPSEEK_API_KEY_HERE` 这一行
+2. 把 `YOUR_DEEPSEEK_API_KEY_HERE` 替换成你第 1 步复制的 `sk-xxxxxxxxxxxxxxxx`
+3. ⚠️ **不要加引号、不要加空格**，直接 `OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx` 即可
+4. 保存文件，关闭编辑器
+5. 脚本自动退出
+
+---
+
+### 第 4 步：正式启动（首次 3-8 分钟，之后 10 秒）
+
+**再次双击 `setup.bat`**（或执行 `./setup.sh`），脚本会自动：
+
+```
+[1/7] 检查 Python           → 已找到 Python 3.11.x
+[2/7] 检查 Node.js           → 已找到 Node.js v20.x.x
+[3/7] 检查 ffmpeg            → 已找到 / 自动安装
+[4/7] 检查 .env 配置         → Config OK
+[5/7] 安装 Python 依赖       → 阿里云镜像，1-2 分钟
+[6/7] 安装前端依赖           → npmmirror 镜像，1-2 分钟
+[7/7] 启动服务               → 后端 8000 + 前端 3000
+```
+
+浏览器自动打开 **http://localhost:3000**，看到"开始一场模拟答辩"页面即成功。
+
+> ⚠️ **首次启动 Whisper 模型下载约 1.5 GB**，如果页面加载慢，等 1-2 分钟刷新即可。后续启动 10 秒内完成。
+
+---
+
+### 第 5 步：关闭 & 下次使用
+
+- **关闭**：关掉弹出来的两个命令行窗口即可
+- **下次再用**：双击 `setup.bat` → 10 秒启动 → 浏览器打开
+
+---
+
+### 常见问题（部署相关）
+
+| 问题 | 解决 |
+|------|------|
+| 双击 `setup.bat` 闪退 | 在项目文件夹空白处按住 Shift+右键→「在此处打开 PowerShell」→ 输入 `.\setup.bat` 回车，看报错信息 |
+| `python` 不是内部命令 | Python 安装时没勾"Add to PATH"→ 重新安装 Python 并勾选，或手动添加 PATH |
+| `node` 不是内部命令 | 重新安装 Node.js |
+| 端口 8000/3000 被占用 | 重启电脑，或手动关掉占用端口的程序 |
+| 页面打开但一片空白 | 等 1 分钟刷新（Whisper 模型首次下载中） |
+| Windows 用户名含中文 | 可能导致 venv 创建失败，试着手动创建一个英文路径的项目目录 |
 
 ---
 
 ## 🌍 海外用户 · Docker 部署
 
-### 环境要求
-
-| 项目 | 最低要求 | 说明 |
-|------|---------|------|
-| 操作系统 | Windows 10+ / macOS 12+ / Linux | 均支持 |
-| 内存 | **8 GB** 以上 | 16 GB 更佳 |
-| 硬盘 | **10 GB** 空闲空间 | Docker 镜像 + Whisper 模型约 3-4 GB |
-| 软件 | **Docker Desktop** | 必须安装 |
-
-### 第一步：安装 Docker Desktop
-
-- [Docker Desktop 下载页](https://www.docker.com/products/docker-desktop/)
-- Windows 安装时勾选「Use WSL 2 instead of Hyper-V」
-- 安装完成后确保任务栏 Docker 图标为绿色
-
-验证：
-
-```bash
-docker --version
-```
-
-### 第二步：获取 DeepSeek API Key
-
-同上。
-
-### 第三步：下载并启动
-
 ```bash
 git clone https://github.com/camille162/uestc-defense-committee.git
 cd uestc-defense-committee
 cp .env.example .env
-```
-
-编辑 `.env` 文件，填入 API Key，然后：
-
-```bash
+# 编辑 .env，填入 DeepSeek API Key
 docker compose up -d --build
+# 浏览器打开 http://localhost:3000
 ```
-
-浏览器访问 **http://localhost:3000**。
-
----
 
 ---
 
@@ -90,145 +154,60 @@ docker compose up -d --build
 
 ### 1. 准备文件
 
-将你的论文或答辩 PPT 导出为 PDF（推荐），或者直接使用 PPTX/DOCX/TXT 格式。
+将论文或答辩 PPT 导出为 PDF（推荐），或直接使用 PPTX/DOCX/TXT。
 
-> **提示**：如果 PPT 中有大量图表、截图，建议另外准备一份纯文字版的论文摘要 PDF，方便 AI 提取完整内容。
+> 如果 PPT 中大量图表，建议另外准备一份纯文字版论文摘要 PDF。
 
 ### 2. 开始答辩
 
-1. 填写**论文题目**
-2. 填写**论文方向简述**（一句话或一段摘要即可）
-3. 上传**论文/PPT 文件**
-4. 选择**评委人数**：
-   - 1 位（研究方法评委）
-   - 2 位（研究方法 + 领域内容）
-   - 3 位（研究方法 + 领域内容 + 批判性）← **推荐**
+1. 填写论文题目
+2. 填写论文方向简述（一句话或一段摘要）
+3. 上传论文/PPT 文件
+4. 选择评委人数：1 位 / 2 位 / **3 位（推荐）**
 5. 点击「开始答辩」
 
 ### 3. 语音作答
 
-- AI 评委会先用语音向你提问（浏览器播放）
-- 听到问题后，点击页面按钮或等待自动开始录音
-- **按住说话**（push-to-talk）或**直接说**（系统自动检测静音并提交）
-- 说完后可以手动点击「立即提交」，或等系统自动检测并提交
-- 你的回答会被转写成文字显示在页面上，可以手动修改订正
+- AI 评委会用语音提问（浏览器播放）
+- 按下录音按钮说话，或系统自动检测
+- 回答会被转写成文字，可以手动修改
 - AI 评委可能追问，也可能推进到下一题
 
 ### 4. 查看报告
 
-所有评委提问结束后，系统自动生成答辩评价报告，包含：
-
+答辩结束后自动生成评价报告，包含：
 - 综合评价和答辩结论
-- 每位评委的得分和评语
-- 每题得分和详细点评
-- 优势 (Top 3) / 待改进 (Top 3) / 学习建议
+- 每位评委分项得分和评语
+- 优势 Top 3 / 待改进 Top 3 / 学习建议
 - 可下载 PDF 版本
 
 ---
 
-## ⚠️ 能力边界（请先阅读）
+## ⚠️ 能力边界
 
-**本系统能做什么：**
-
-- ✅ 提取 PDF/PPTX/DOCX/TXT 中的**文字内容**，据此生成答辩提问
+**能做什么：**
+- ✅ 提取 PDF/PPTX/DOCX/TXT 中的文字内容，据此生成答辩提问
 - ✅ 三位不同风格的 AI 评委轮流语音提问
-- ✅ 学生语音作答（push-to-talk 模式）
+- ✅ 语音作答（push-to-talk 模式）
 - ✅ AI 根据回答内容智能追问
-- ✅ 多维度打分并生成文字评语
-- ✅ 答辩结束后输出 Markdown + PDF 评价报告
+- ✅ 多维度打分并生成评语
+- ✅ Markdown + PDF 评价报告
 
-**本系统不能做什么：**
-
-- ❌ 理解 PPT 中的图片、图表、曲线、公式、SmartArt、流程图（只提取文字）
-- ❌ 处理扫描版 PDF（需要 OCR，本系统不含 OCR 能力）
-- ❌ 支持多人并发（每人本地运行一个实例，天然隔离）
-- ❌ 支持教师管理后台（无用户系统、无学号绑定）
-- ❌ 完整理解超长论文（当前仅使用论文前约 6000 字符生成问题）
-
-**建议**：如果你希望 AI 提问覆盖论文的全部章节，可将论文按章节拆分为多个文件分批上传，或者准备一份包含全文核心内容的摘要版 PDF。
+**不能做什么：**
+- ❌ 理解图片、图表、公式、流程图（只提取文字）
+- ❌ 处理扫描版 PDF（无 OCR）
+- ❌ 多人并发、教师管理后台
+- ❌ 完整理解超长论文（当前约前 6000 字符）
 
 ---
 
-## 成本说明
+## 成本
 
-| 项目 | 费用 | 承担方 |
-|------|------|-------|
-| DeepSeek API | 单次答辩约 ¥0.20-0.50 | **学生自理**（新用户赠送 ¥10 额度） |
+| 项目 | 费用 | 谁出 |
+|------|------|------|
+| DeepSeek API | ~¥0.2-0.5/次 | 学生自理（新用户送 ¥10） |
 | 语音识别 (Whisper) | 免费，本地运行 | — |
 | 语音合成 (Edge TTS) | 免费，微软提供 | — |
-| Docker Desktop | 免费（个人使用） | — |
-
-**成本分摊建议**：
-
-每位学生注册自己的 DeepSeek 账号，首次赠送的 ¥10 额度足够完整练习 20-40 次。如果额度用完，DeepSeek 最低充值金额为 ¥1，按次计费，无需月租。一场答辩（3 位评委 × 5-8 题/人，约 30-60 分钟）的 LLM 调用量约 15,000-30,000 tokens，按当前 DeepSeek 价格折算约 ¥0.20-0.50。
-
----
-
-## 常见问题
-
-### Q: 启动后 localhost:3000 打不开？
-
-- 等待几秒让服务完全启动
-- 检查是否有杀毒软件/防火墙拦截
-- 本地部署：查看 `backend/` 目录下的终端窗口是否报错
-- Docker 部署：运行 `docker compose logs backend` 查看后端日志
-
-### Q: 上传 PPT 后生成的问题不相关？
-
-- 确认 PPT 的文本框中有足够文字（纯图片 PPT 无法提取内容）
-- 建议将 PPT 导出为 PDF 再上传
-- 如果论文很长，AI 只看到前 6000 字符，可能导致漏掉后文内容
-
-### Q: 语音识别不准确？
-
-- 默认使用本地 Whisper Medium 模型，中文口语识别有约 10-20% 错误率
-- 可以在提交前手动修改转写文字
-- 如果追求更高准确率，可以切换到火山引擎流式 ASR（见 `.env.example` 中的说明）
-
-### Q: 答辩过程中浏览器崩溃了？
-
-- 重新打开 http://localhost:3000，进入之前的答辩 ID
-- 已提交的回答和评分会保留
-- 也可以重新开始一场新的答辩
-
-### Q: DeepSeek API Key 失效？
-
-- 检查 `.env` 文件中的 Key 是否正确
-- 登录 [platform.deepseek.com](https://platform.deepseek.com) 查看 Key 状态和余额
-- 修改 `.env` 后需要重启服务（本地：关闭窗口重开；Docker：`docker compose up -d --build backend`）
-
-### Q: 可以切换其他大模型吗？
-
-可以。`.env` 文件中修改：
-
-```ini
-# 例如切换到阿里云通义千问
-OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-OPENAI_API_KEY=你的通义千问APIKey
-LLM_MODEL=qwen-plus
-```
-
-任何兼容 OpenAI 协议的大模型 API 都可以接入。
-
-### Q: 数据库数据在哪？
-
-- **本地部署 (SQLite)**：`backend/data/committee.db`
-- **Docker 部署 (SQLite)**：Docker Volume `sqlite_data` 中
-- **Docker 部署 (MySQL)**：Docker Volume `mysql_data` 中
-
-### Q: 如何彻底清除数据重新开始？
-
-- 本地部署：删除 `backend/data/committee.db`
-- Docker + SQLite：`docker compose down -v`（会清除所有数据）
-- Docker + MySQL：`docker compose down -v`
-
-### Q: 不想用本地部署了，怎么切回 Docker？
-
-```bash
-# 编辑 .env，将 DB_ENGINE 改回 mysql
-# 然后
-docker compose up -d --build
-```
 
 ---
 
@@ -238,52 +217,24 @@ docker compose up -d --build
 |------|------|
 | 前端 | Next.js 14 + TypeScript + Tailwind |
 | 后端 | FastAPI + SQLAlchemy |
-| 数据库 | MySQL 8（海外 Docker） / SQLite（国内本地部署） |
+| 数据库 | SQLite（国内） / MySQL 8（Docker） |
 | LLM | OpenAI 兼容协议（默认 DeepSeek） |
-| STT | faster-whisper（本地） / 火山引擎 ASR（可选） |
-| TTS | edge-tts（免费） / 豆包 TTS（可选） |
-| 部署 | Docker Compose / 本地 Python + Node.js |
-
-**关于多智能体**：原项目虽然安装了 `langgraph`，但实际流程由 FastAPI 按轮次驱动——第一轮调用评委 A 的 Prompt 出题，第二轮调用评委 B 的 Prompt，以此类推。三位评委不会同时对话，而是依次提问。这对于答辩模拟场景已经足够，但不是严格意义上的"多智能体委员会协同讨论"。
+| STT | faster-whisper（本地） |
+| TTS | edge-tts（免费） |
+| 部署 | setup.bat/sh 本地启动 / Docker Compose |
 
 ---
 
-## 项目来源
+## 鸣谢 & License
 
-本项目基于 [heatnan/offerMaster](https://github.com/heatnan/offerMaster)（MIT 协议）进行二次开发。原项目是一个 AI 模拟面试系统，我们将面试场景适配为论文答辩场景。
+基于 [heatnan/offerMaster](https://github.com/heatnan/offerMaster)（MIT）改造。主要改动：
 
-**主要改动**：
+| 模块 | 原版 → 本系统 |
+|------|-------------|
+| 评委角色 | HR/技术/Manager → 研究方法/领域内容/批判性 |
+| 出题逻辑 | 基于简历+JD → 基于论文/PPT |
+| 评分维度 | 技术/表达/深度 → 内容掌握/逻辑严密性/应对能力/学术表达 |
+| 文件上传 | PDF/DOCX/TXT → PDF/PPTX/DOCX/TXT |
+| 报告 | 面试评估 → 答辩评价报告 |
 
-| 模块 | 原版（Offer Master） | 改造后（本系统） |
-|------|---------------------|-----------------|
-| 评委角色 | 一面 Peer / 二面 High Peer / 三面 Manager | 研究方法评委 / 领域内容评委 / 批判性评委 |
-| 出题逻辑 | 基于简历+JD 生成技术面试题 | 基于论文/PPT 内容生成答辩问题 |
-| 评分维度 | 技术准确性 / 表达 / 深度 | 内容掌握度 / 逻辑严密性 / 应对能力 / 学术表达 |
-| 开场 | 自我介绍 | 论文概述 |
-| 文件上传 | PDF / DOCX / TXT | PDF / PPTX / DOCX / TXT |
-| 报告 | 面评报告（推荐 offer 等） | 答辩评价报告（推荐通过 / 有条件通过等） |
-
----
-
-## 关于隐私
-
-- 你的论文/PPT 文件、语音录音、回答文字等**全部数据仅存储在你的电脑上**（本地文件或 Docker Volume 中）
-- 仅大模型 API 调用时会将论文摘要和回答文本发送至 DeepSeek 服务器（用于生成问题和评分）
-- 语音数据**不离开你的电脑**（除非你手动切换为火山引擎 ASR，此时音频会发送至火山引擎服务器做转写）
-- 如需彻底清除数据：
-  - 本地部署：删除 `backend/data/` 目录
-  - Docker 部署：`docker compose down -v`
-
----
-
-## 鸣谢
-
-本系统基于 [Offer Master](https://github.com/heatnan/offerMaster)（MIT License）改造，感谢原作者 heatnan 的优秀工作。
-
-改造内容：将面试场景适配为论文答辩场景，包括修改全部 Prompt、添加 PPTX 解析支持、调整评分维度、修改前端文案等。
-
----
-
-## License
-
-MIT
+MIT License
