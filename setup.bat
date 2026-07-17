@@ -146,6 +146,10 @@ echo   [7/7] Starting services...
 cd ..\backend
 if not exist "data" mkdir data
 
+:: Kill any process holding port 8000 or 3000 from a previous run
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8000 " 2^>nul') do taskkill /F /PID %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000 " 2^>nul') do taskkill /F /PID %%a >nul 2>&1
+
 start "UESTC-Backend" cmd /k "cd /d %cd% && venv\Scripts\activate.bat && set DB_ENGINE=sqlite && echo Backend http://127.0.0.1:8000 && uvicorn app.main:app --host 127.0.0.1 --port 8000"
 
 cd ..\frontend
