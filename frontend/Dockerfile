@@ -1,13 +1,14 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm install
+# 使用 npmmirror 国内镜像，加速依赖下载
+RUN npm config set registry https://registry.npmmirror.com && npm install
 
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+RUN npm config set registry https://registry.npmmirror.com && npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app

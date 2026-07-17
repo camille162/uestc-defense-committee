@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     DOUBAO_VOICE_TYPE: str = "zh_male_m191_uranus_bigtts"  # 默认"云舟" (Seed TTS 2.0 沉稳男声)
 
     # DB
+    # 数据库引擎: mysql (需要 Docker MySQL 容器) | sqlite (本地文件，无需拉镜像，国内推荐)
+    DB_ENGINE: str = "mysql"
     MYSQL_HOST: str = "mysql"
     MYSQL_PORT: int = 3306
     MYSQL_USER: str = "offer"
@@ -48,6 +50,8 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
+        if self.DB_ENGINE == "sqlite":
+            return "sqlite:///./data/committee.db"
         return (
             f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
             f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}?charset=utf8mb4"

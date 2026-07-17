@@ -20,6 +20,9 @@ backend/data/
 *.sqlite
 *.db
 
+# ffmpeg portable (auto-downloaded by setup.bat)
+ffmpeg/
+
 # IDE
 .vscode/
 .idea/
