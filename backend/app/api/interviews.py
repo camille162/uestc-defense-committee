@@ -608,11 +608,11 @@ def _generate_report_for(interview: models.Interview, db: Session) -> models.Rep
 
     report = interview.report
     if not report:
-        report = models.Report(interview_id=interview.id, overall_comment_md=md_text, pdf_path=pdf_rel)
+        report = models.Report(interview_id=interview.id, overall_comment_md=md_text, pdf_path=pdf_rel or "")
         db.add(report)
     else:
         report.overall_comment_md = md_text
-        report.pdf_path = pdf_rel
+        report.pdf_path = pdf_rel or ""
     db.commit()
     return report
 
@@ -642,7 +642,7 @@ def generate_report(interview_id: int, db: Session = Depends(get_db)):
     report = _generate_report_for(interview, db)
     return {
         "markdown": report.overall_comment_md,
-        "pdf_url": _tts_url(report.pdf_path),
+        "pdf_url": _tts_url(report.pdf_path) if report.pdf_path else None,
     }
 
 

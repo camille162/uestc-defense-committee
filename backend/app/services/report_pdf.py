@@ -1,12 +1,20 @@
-"""Render interview report as Markdown -> HTML -> PDF."""
+"""Render interview report as Markdown -> HTML -> PDF.
+
+PDF generation requires weasyprint + system GTK libraries.
+On Windows without GTK, PDF is gracefully disabled — markdown
+report is still available.
+"""
 from pathlib import Path
 import uuid
 import markdown as md
 from jinja2 import Template
-from weasyprint import HTML
 
 from ..config import settings
 
+# Lazy import: weasyprint needs GTK system libraries that are
+# not available by default on Windows. We import it inside
+# render_pdf() so the app can still start without it.
+# https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation
 
 HTML_TEMPLATE = Template(
     """
@@ -29,8 +37,26 @@ blockquote { border-left: 3px solid #ddd; margin: 8px 0; padding: 4px 12px; colo
 """
 )
 
+# Detect once whether weasyprint is available.
+_WEASYPRINT_OK = False
+_WEASYPRINT_ERROR = ""
+try:
+    from weasyprint import HTML  # noqa: F401
+    _WEASYPRINT_OK = True
+except OSError as e:
+    _WEASYPRINT_ERROR = str(e)
+except ImportError as e:
+    _WEASYPRINT_ERROR = str(e)
 
-def render_pdf(title: str, markdown_text: str) -> str:
+
+def render_pdf(title: str, markdown_text: str) -> str | None:
+    """Render markdown to PDF. Returns relative path, or None if PDF is unavailable."""
+    if not _WEASYPRINT_OK:
+        print(f"[report_pdf] weasyprint unavailable: {_WEASYPRINT_ERROR}")
+        return None
+
+    from weasyprint import HTML
+
     content_html = md.markdown(markdown_text, extensions=["tables", "fenced_code"])
     html_str = HTML_TEMPLATE.render(title=title, content_html=content_html)
     out_dir = Path(settings.STORAGE_DIR) / "reports"
